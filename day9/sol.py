@@ -70,47 +70,75 @@ for i in range(n):
         c = p1[1]
         boundary["vertical"][c].append(tuple(sorted([p1[0], p2[0]])))
 
-def on_boundary(p):
+def on_vertical_boundary(p):
+    # TODO: this can be made more efficient using interval trees
+    # TODO: compute runtime
+    r, c = p
+    if c in boundary["vertical"]:
+        for segment in boundary["vertical"][c]:
+            if segment[0] <= r and r <= segment[1]:
+                return segment
+    return None
+
+def on_horizontal_boundary(p):
     # TODO: this can be made more efficient using interval trees
     # TODO: compute runtime
     r, c = p
     if r in boundary["horizontal"]:
         for segment in boundary["horizontal"][r]:
             if segment[0] <= c and c <= segment[1]:
-                return True
-    if c in boundary["vertical"]:
-        for segment in boundary["vertical"][c]:
-            if segment[0] <= r and r <= segment[1]:
-                return True
+                return segment
+    return None
+
+def intersection(t1, t2):
+    # t1 and t2 are vertical segments
+    t1, t2 = sorted([t1, t2])
+    if t1[1] > t2[0]:
+        return True
     return False
 
 positions_set = set(positions)
 max_c = 1 + max(p[1] for p in positions)
 def is_in_loop(p):
     # ray casting algo
-    # if already on boundary, then true
-    if p in positions_set or on_boundary(p):
+    if p in positions_set or on_vertical_boundary(p) or on_horizontal_boundary(p):
         return True
     # cast ray to right
     r, c = p
     n_crossed_boundary = 0
+    prev_vertical_boundary = None
     while c < max_c + 1:
-        print(r, c)
-        if on_boundary((r, c)):
-            print("currently on boundary")
-            if not on_boundary((r, c+1)):
+        #print(r, c)
+        t  = on_vertical_boundary((r, c))
+        #print(t)
+        if t:
+            if not prev_vertical_boundary:
                 n_crossed_boundary += 1
+            else:
+                if intersection(t, prev_vertical_boundary):
+                    n_crossed_boundary += 1
+            
+            prev_vertical_boundary = t
         c += 1
-    print(n_crossed_boundary)
+
     return n_crossed_boundary % 2 == 1
 
-"""
+#"""
 max_r = max(p[0] for p in positions)
-for r in range(max_r):
+for r in range(max_r + 1):
     for c in range(max_c):
-        print(r, c)
-        print(is_in_loop((r, c)))
-"""
-print(is_in_loop((2, 10)))
+        #print(r, c)
+        if is_in_loop((r, c)):
+            print("\033[32m0\033[0m", end="\t")
+        else:
+            print('.', end='\t')
+    print()
+print()
+#"""
+
+#print(is_in_loop((3, 3)))
+#print(is_in_loop((2, 8)))
+
+
 #def is_all_green(p1, p2):
 
