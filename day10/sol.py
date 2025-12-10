@@ -51,4 +51,45 @@ def fewest_presses(start, buttons, goal):
 
 print(sum([fewest_presses(tuple(), buttons[i], board) for i,board in enumerate(diagrams)]))
 
+#
+# Part 2
+#
 
+# linear optimization
+import pyomo.environ as pyo
+
+joltages = [eval(line.split()[-1].replace('{', '[').replace('}', ']')) for line in open(filename).readlines()]
+
+result = 0
+
+def expand(tup, dim):
+    v = [0]*dim
+    for idx in tup:
+        v[idx] = 1
+    return v
+
+result = 0
+for i,jolt in enumerate(joltages):
+    V = jolt
+    dim = len(V)
+
+    X = [expand(t, dim) for t in buttons[i]]
+    n = len(buttons[i])
+
+    model = pyo.ConcreteModel()
+    model.c = pyo.Var(range(n), domain=pyo.NonNegativeIntegers)
+
+    # constraints
+    model.eq = pyo.ConstraintList()
+    for j in range(dim):
+        model.eq.add(sum(model.c[i] * X[i][j] for i in range(n)) == V[j])
+    
+    # objective
+    model.obj = pyo.Objective(expr=sum(model.c[i] for i in range(n)))
+
+    solver = pyo.SolverFactory("cbc")
+    solver.solve(model)
+
+    result += sum(model.c[i].value for i in range(n))
+
+print(result)
